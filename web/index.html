@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>D4RT 论文实验室 · 把一篇 CVPR 最佳论文拆成可以上手的东西</title>
+<meta name="description" content="以 CVPR 2026 最佳论文 D4RT 的查询接口为核心的交互式论文学习系统：查询矩阵、架构解剖、记忆卡与自测。" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b1220'/%3E%3Ccircle cx='16' cy='16' r='6' fill='none' stroke='%23ff8a4c' stroke-width='2.4'/%3E%3Ccircle cx='16' cy='16' r='1.8' fill='%234cc9f0'/%3E%3C/svg%3E" />
+<link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+<div class="grain" aria-hidden="true"></div>
+
+<header class="topbar">
+  <a class="brand" href="#overview" data-tab="overview">
+    <span class="mark" aria-hidden="true">
+      <svg viewBox="0 0 34 34" width="30" height="30">
+        <circle cx="17" cy="17" r="12" fill="none" stroke="rgba(255,138,76,.55)" stroke-width="1.2"/>
+        <circle cx="17" cy="17" r="7" fill="none" stroke="rgba(76,201,240,.75)" stroke-width="1.2"/>
+        <circle cx="17" cy="17" r="2" fill="#ff8a4c"/>
+        <circle cx="29" cy="17" r="1.6" fill="#4cc9f0"/>
+        <circle cx="17" cy="5" r="1.4" fill="#b57bff"/>
+      </svg>
+    </span>
+    <span class="brand-text">
+      <b>D4RT 论文实验室</b>
+      <i>CVPR 2026 Best Paper · 交互式精读系统</i>
+    </span>
+  </a>
+
+  <nav class="tabs" id="tabs" aria-label="主导航">
+    <button data-tab="overview">概览</button>
+    <button data-tab="radar">论文雷达</button>
+    <button data-tab="matrix">查询矩阵</button>
+    <button data-tab="anatomy">架构解剖</button>
+    <button data-tab="trainer">训练场</button>
+    <button data-tab="path">学习路线</button>
+  </nav>
+
+  <div class="status" id="selfcheck" title="浏览器端几何实现与 Python 参考实现的逐项比对">
+    <span class="dot"></span><span class="label">几何自检</span><b id="check-count">…</b>
+  </div>
+</header>
+
+<main>
+
+  <!-- ============================================================ OVERVIEW -->
+  <section class="view on" id="view-overview">
+    <div class="hero">
+      <div class="hero-main">
+        <div class="eyebrow"><span class="pill best">CVPR 2026 · 最佳论文</span><span class="sep"></span>Google DeepMind · UCL · Oxford</div>
+        <h1>把一篇最佳论文，<br /><em>拆成可以上手的东西。</em></h1>
+        <p class="lead">
+          D4RT 的全部能力都压在一个接口上：<code>q = (u, v, t_src, t_tgt, t_cam) → P ∈ R³</code>。
+          这个接口不只是公式，它<b>可以被拖动</b>。下面这个实验室把论文的每一个维度都变成可操作的控件，
+          你可以在一个带精确真值的四维场景里，亲手验证论文说的每一句话。
+        </p>
+        <div class="hero-cta">
+          <button class="btn primary" data-tab="matrix">进入查询矩阵 <span>→</span></button>
+          <button class="btn ghost" data-tab="anatomy">看架构解剖</button>
+        </div>
+        <div class="hero-note">
+          <b>诚实声明</b>：这里不跑神经网络（浏览器里跑不动 D4RT 权重）。3D 点是解析几何的<b>真值</b>，
+          用来演示接口语义与几何流程；论文的实验数字请以原文为准。
+        </div>
+      </div>
+
+      <aside class="paper-card">
+        <div class="pc-top">
+          <span class="pc-venue">CVPR 2026</span>
+          <span class="pc-award">BEST PAPER</span>
+        </div>
+        <h2>Efficiently Reconstructing Dynamic Scenes One D4RT at a Time</h2>
+        <p class="pc-authors">Chuhan Zhang, Guillaume Le Moing, Skanda Koppula, Ignacio Rocco, Liliane Momeni, Junyu Xie, Shuyang Sun, Rahul Sukthankar, Joëlle K. Barral, Raia Hadsell, Zoubin Ghahramani, Andrew Zisserman, Junlin Zhang, Mehdi S. M. Sajjadi</p>
+        <p class="pc-org">Google DeepMind · University College London · University of Oxford</p>
+        <div class="pc-links">
+          <a href="https://arxiv.org/abs/2512.08924" target="_blank" rel="noopener">arXiv 2512.08924 ↧</a>
+          <a href="https://cvpr.thecvf.com/Conferences/2026/News/Best_Papers" target="_blank" rel="noopener">获奖公告 ↗</a>
+        </div>
+        <div class="pc-quote">
+          “Our decoding interface allows the model to independently and flexibly probe
+          the 3D position of any point in space and time.”
+        </div>
+      </aside>
+    </div>
+
+    <div class="stat-row" id="stat-row"></div>
+
+    <div class="section-head">
+      <h2>60 秒读懂这篇论文</h2>
+      <p>四句话。如果只能记住四件事，就是这四件。</p>
+    </div>
+    <div class="grid-4" id="brief-cards"></div>
+
+    <div class="section-head">
+      <h2>这个实验室怎么用</h2>
+      <p>建议顺序：先玩，再读，最后自测。顺序反了会变成背结论。</p>
+    </div>
+    <ol class="howto" id="howto"></ol>
+
+    <div class="section-head">
+      <h2>一条值得读透的引用链</h2>
+      <p>2025 与 2026 两届 CVPR 最佳论文，恰好是同一个问题的两个阶段。</p>
+    </div>
+    <div class="chain" id="chain"></div>
+  </section>
+
+  <!-- =============================================================== RADAR -->
+  <section class="view" id="view-radar">
+    <div class="section-head tight">
+      <h2>论文雷达</h2>
+      <p>2025–2026 顶会获奖与高相关论文。每张卡都回答同一件事：<b>读它能学到什么</b>。</p>
+    </div>
+    <div class="chips" id="radar-filter">
+      <button class="chip on" data-filter="all">全部</button>
+      <button class="chip" data-filter="best">最佳论文</button>
+      <button class="chip" data-filter="CVPR">CVPR</button>
+      <button class="chip" data-filter="ICCV">ICCV</button>
+      <button class="chip" data-filter="chain">几何主线</button>
+    </div>
+    <div class="paper-grid" id="paper-grid"></div>
+
+    <div class="section-head">
+      <h2>代际对照：VGGT → D4RT</h2>
+      <p>同一个团队血脉上的两次跃迁。看懂这张表，就看懂了「表示」到「寻址」的转变。</p>
+    </div>
+    <div class="table-wrap" id="compare-table"></div>
+
+    <div class="section-head">
+      <h2>把任何一篇论文放进同一套模板</h2>
+      <p>这个系统的内容层是纯数据。加一篇论文 = 往 <code>data.js</code> 里加一个对象，不需要改任何界面代码。</p>
+    </div>
+    <div class="extend">
+      <div class="extend-col">
+        <h3>最小字段</h3>
+        <pre class="code"><code>{
+  id: 'vggt',
+  venue: 'CVPR 2025', award: '最佳论文',
+  title: '…', authors: '…', org: '…',
+  one:   '一句话：它到底做了什么',
+  why:   '为什么值得读 / 它在谱系里的位置',
+  learn: ['读完你能获得的能力', '…'],
+  tags:  ['feed-forward', 'geometry'],
+  links: [{ l: 'arXiv …', u: 'https://…' }]
+}</code></pre>
+      </div>
+      <div class="extend-col">
+        <h3>三步扩展</h3>
+        <ol class="steps">
+          <li><b>换锚点</b>：若要换成别的论文，改 <code>LAB_DATA.anatomy</code>（7 步解剖）与 <code>modes</code>（查询模式文案）。</li>
+          <li><b>换场景</b>：<code>lab/scene.py</code> 里改相机路径与物体运动，跑 <code>python export.py</code> 重新烘焙。</li>
+          <li><b>加题</b>：<code>quiz</code> / <code>cards</code> 里加条目即可，SRS 与计分自动生效。</li>
+        </ol>
+        <p class="muted small">所有进度存 localStorage，刷新不丢；「学习路线」页可一键导出 Markdown 报告。</p>
+      </div>
+    </div>
+    <div class="sources" id="sources"></div>
+  </section>
+
+  <!-- ============================================================== MATRIX -->
+  <section class="view" id="view-matrix">
+    <div class="matrix-head">
+      <div>
+        <h2>查询矩阵</h2>
+        <p>拖动任意一个维度，观察同一次查询如何改变它的含义。<b>任务不是网络结构，而是查询的扫描方式。</b></p>
+      </div>
+      <div class="mode-switch" id="mode-switch">
+        <button data-mode="track" class="on">点轨迹</button>
+        <button data-mode="cloud">点云</button>
+        <button data-mode="depth">深度图</button>
+        <button data-mode="pose">相机</button>
+      </div>
+    </div>
+
+    <div class="matrix-grid">
+      <!-- source frame -->
+      <div class="panel frame-panel">
+        <div class="panel-head">
+          <span class="panel-title">源帧 <code>t_src</code></span>
+          <span class="badge-soft" id="frame-badge">frame 0</span>
+        </div>
+        <div class="frame-stage">
+          <canvas id="frame-canvas" width="384" height="288" aria-label="源帧：点击选择查询像素"></canvas>
+          <div class="frame-hint" id="frame-hint">点击画面选择 (u, v)</div>
+        </div>
+        <div class="frame-meta">
+          <div><span>u</span><b id="m-u">0.500</b></div>
+          <div><span>v</span><b id="m-v">0.450</b></div>
+          <div><span>命中</span><b id="m-prim">—</b></div>
+        </div>
+        <div class="tsrc-row" id="tsrc-row"></div>
+        <div class="mini-legend">
+          <span><i style="background:#4cc9f0"></i>本帧</span>
+          <span><i style="background:#ff8a4c"></i>查询点</span>
+          <span><i style="background:#b57bff"></i>参考相机</span>
+        </div>
+        <div class="frame-hit" id="frame-hit"></div>
+      </div>
+
+      <!-- 3d stage -->
+      <div class="panel stage-panel">
+        <div class="panel-head">
+          <span class="panel-title">四维场景 <code>P(t)</code></span>
+          <div class="stage-tools">
+            <button class="tool" id="btn-reset" title="重置视角">⟲</button>
+            <button class="tool" id="btn-play" title="播放时间">▶</button>
+          </div>
+        </div>
+        <div class="stage">
+          <canvas id="view3d" aria-label="三维场景：可拖拽旋转、滚轮缩放"></canvas>
+          <div class="stage-overlay">
+            <div class="readout" id="readout">
+              <div class="ro-line"><span>P</span><b id="ro-p">—</b></div>
+              <div class="ro-line"><span>t</span><b id="ro-t">src 0 · tgt 0 · cam 0</b></div>
+            </div>
+            <div class="tip">拖拽旋转 · 滚轮缩放 · 双击复位</div>
+          </div>
+        </div>
+        <div class="scrub" id="scrub">
+          <div class="scrub-label">目标时刻 <code>t_tgt</code></div>
+          <div class="scrub-track" id="scrub-track"></div>
+        </div>
+      </div>
+
+      <!-- controls -->
+      <div class="panel control-panel">
+        <div class="panel-head"><span class="panel-title">查询参数</span></div>
+
+        <div class="ctrl">
+          <div class="ctrl-top"><label for="sl-u">u <small>源像素横向</small></label><output id="out-u">0.500</output></div>
+          <input type="range" id="sl-u" min="0.02" max="0.98" step="0.005" value="0.5" />
+        </div>
+        <div class="ctrl">
+          <div class="ctrl-top"><label for="sl-v">v <small>源像素纵向</small></label><output id="out-v">0.450</output></div>
+          <input type="range" id="sl-v" min="0.02" max="0.98" step="0.005" value="0.45" />
+        </div>
+        <div class="ctrl">
+          <div class="ctrl-top"><label>t_src <small>源时刻</small></label><output id="out-tsrc">0</output></div>
+          <div class="seg" id="seg-tsrc"></div>
+        </div>
+        <div class="ctrl">
+          <div class="ctrl-top"><label>t_tgt <small>目标时刻</small></label><output id="out-ttgt">0</output></div>
+          <div class="seg" id="seg-ttgt"></div>
+        </div>
+        <div class="ctrl">
+          <div class="ctrl-top"><label>t_cam <small>参考相机</small></label><output id="out-tcam">0</output></div>
+          <div class="seg" id="seg-tcam"></div>
+          <div class="ctrl-hint" id="tcam-hint">随模式联动：点轨迹 / 点云 / 深度图 → t_src，相机 → t_tgt</div>
+        </div>
+
+        <div class="task-box" id="task-box">
+          <div class="task-name" id="task-name">点轨迹</div>
+          <div class="task-meta" id="task-meta">8 次查询 / 条轨迹</div>
+          <div class="task-formula" id="task-formula">P_k = D(u, v, t_src, k, t_src)</div>
+        </div>
+
+        <div class="pose-result" id="pose-result"></div>
+      </div>
+    </div>
+
+    <div class="matrix-foot">
+      <div class="explain" id="mode-explain"></div>
+      <div class="table-mini">
+        <div class="tm-head"><span>任务</span><span>u</span><span>v</span><span>t_src</span><span>t_tgt</span><span>t_cam</span></div>
+        <div class="tm-row" data-row="track"><span>点轨迹</span><span>固定</span><span>固定</span><span>固定</span><span>1…T</span><span>1…T</span></div>
+        <div class="tm-row" data-row="cloud"><span>点云</span><span>1…W</span><span>1…H</span><span>1…T</span><span>= t_src</span><span>固定</span></div>
+        <div class="tm-row" data-row="depth"><span>深度图</span><span>1…W</span><span>1…H</span><span>1…T</span><span>= t_src</span><span>= t_src</span></div>
+        <div class="tm-row" data-row="pose"><span>外参</span><span>1…h</span><span>1…w</span><span>固定</span><span>1…T</span><span>1…T</span></div>
+        <div class="tm-row" data-row="pose"><span>内参</span><span>1…h</span><span>1…w</span><span>1…T</span><span>—</span><span>—</span></div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <b>为什么表里是「1…T」而不是「全分辨率」？</b>
+      查询是离散的采样。你可以只查 8 个时间点（轨迹），也可以查 2.8 万个像素（点云），
+      还可以只查 63 个粗网格点（外参）。<b>分辨率是查询的预算，不是网络的属性。</b>
+    </div>
+  </section>
+
+  <!-- ============================================================= ANATOMY -->
+  <section class="view" id="view-anatomy">
+    <div class="section-head tight">
+      <h2>架构解剖</h2>
+      <p>七步，从「为什么需要它」到「它在哪里会失效」。每一步都给出公式、代码、以及最常见的误解。</p>
+    </div>
+    <div class="pipeline" id="pipeline"></div>
+
+    <div class="anatomy-grid">
+      <ol class="stepper" id="stepper"></ol>
+      <article class="detail" id="detail"></article>
+    </div>
+  </section>
+
+  <!-- ============================================================= TRAINER -->
+  <section class="view" id="view-trainer">
+    <div class="matrix-head">
+      <div>
+        <h2>训练场</h2>
+        <p>读懂了 ≠ 记住了 ≠ 会用了。三种练习分别对应这三件事。</p>
+      </div>
+      <div class="mode-switch" id="trainer-switch">
+        <button data-sub="cards" class="on">记忆卡</button>
+        <button data-sub="quiz">概念自测</button>
+        <button data-sub="socratic">苏格拉底</button>
+      </div>
+    </div>
+
+    <div class="trainer-body">
+      <div class="sub on" id="sub-cards">
+        <div class="cards-layout">
+          <div class="flash-area">
+            <div class="flash-top">
+              <span id="card-counter">剩余 0 张</span>
+              <span class="muted" id="card-box">BOX 0</span>
+            </div>
+            <div class="flashcard" id="flashcard" tabindex="0" role="button" aria-label="翻转卡片">
+              <div class="fc-inner">
+                <div class="fc-face fc-front">
+                  <div class="fc-tag">问题</div>
+                  <div class="fc-q" id="fc-q">…</div>
+                  <div class="fc-hint">点击翻转</div>
+                </div>
+                <div class="fc-face fc-back">
+                  <div class="fc-tag">答案</div>
+                  <div class="fc-a" id="fc-a">…</div>
+                  <div class="fc-ref" id="fc-ref"></div>
+                </div>
+              </div>
+            </div>
+            <div class="grade-row">
+              <button class="grade g0" data-grade="0">忘记<small>稍后再来</small></button>
+              <button class="grade g1" data-grade="1">模糊<small>10 分钟后</small></button>
+              <button class="grade g2" data-grade="2">记得<small>1 天后</small></button>
+              <button class="grade g3" data-grade="3">秒答<small>3 天后</small></button>
+            </div>
+          </div>
+          <aside class="flash-stat">
+            <h3>记忆进度</h3>
+            <div class="ring" id="card-ring"><span id="ring-val">0%</span></div>
+            <ul class="kv">
+              <li><span>已掌握</span><b id="kv-mastered">0</b></li>
+              <li><span>学习中</span><b id="kv-learning">0</b></li>
+              <li><span>未开始</span><b id="kv-new">0</b></li>
+            </ul>
+            <p class="muted small">间隔重复：连续答对会把卡片推向更高的 box，间隔从 10 分钟拉到 3 天。</p>
+          </aside>
+        </div>
+      </div>
+
+      <div class="sub" id="sub-quiz">
+        <div class="quiz-wrap">
+          <div class="quiz-top">
+            <span id="quiz-progress">第 1 / 12 题</span>
+            <span class="muted" id="quiz-best">历史最佳 —</span>
+          </div>
+          <div class="quiz-card">
+            <div class="q-text" id="q-text"></div>
+            <div class="q-options" id="q-options"></div>
+            <div class="q-feedback" id="q-feedback"></div>
+          </div>
+          <div class="quiz-actions">
+            <button class="btn ghost" id="q-next" disabled>下一题 →</button>
+            <button class="btn ghost" id="q-restart">重新开始</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="sub" id="sub-socratic">
+        <div class="socratic-grid" id="socratic-grid"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================================ PATH -->
+  <section class="view" id="view-path">
+    <div class="section-head tight">
+      <h2>五天，从「看不懂」到「能批判」</h2>
+      <p>每天 60–90 分钟，有明确产出物和自检点。勾选即保存进度。</p>
+    </div>
+    <div class="path-grid" id="path-grid"></div>
+
+    <div class="section-head">
+      <h2>六条读论文的手艺</h2>
+      <p>这些方法比任何一篇论文都更耐用。</p>
+    </div>
+    <div class="grid-3" id="tips-grid"></div>
+
+    <div class="report" id="report">
+      <div class="report-head">
+        <div>
+          <h3>学习报告</h3>
+          <p class="muted small">导出为 Markdown，可直接贴进周报或组会记录。</p>
+        </div>
+        <button class="btn primary" id="btn-export">导出报告 ↓</button>
+      </div>
+      <pre class="report-body" id="report-body"></pre>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="foot-left">
+    <b>D4RT 论文实验室</b>
+    <span>一个用来「学会读论文」的论文增量项目 · 数据与论文事实以官方来源为准</span>
+  </div>
+  <div class="foot-right">
+    <span id="foot-check">几何自检 —</span>
+    <span>·</span>
+    <span>离线可用 · 无追踪 · 进度只存本机</span>
+  </div>
+</footer>
+
+<script src="js/scene-data.js"></script>
+<script src="js/golden.js"></script>
+<script src="js/scene.js"></script>
+<script src="js/render3d.js"></script>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+# keep the repo portable: normalise text to LF, never touch binaries
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.zip binary
+*.pyc binary
